@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: anisiaklimenko <anisiaklimenko@student.    +#+  +:+       +#+        */
+/*   By: acristin <acristin@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/13 14:06:17 by anisiaklime       #+#    #+#             */
-/*   Updated: 2022/01/13 16:47:08 by anisiaklime      ###   ########.fr       */
+/*   Updated: 2022/07/04 08:35:32 by acristin         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,9 +45,7 @@ void	child_one(int *fd, char **argv, char **envp)
 		warning(errno, "Error: ");
 	if (dup2(fd[1], STDOUT_FILENO) < 0)
 		warning(errno, "Error: ");
-	close (fd_in);
 	close (fd[0]);
-	close (fd[1]);
 	execute(argv[2], envp);
 }
 
@@ -62,8 +60,6 @@ void	child_two(int *fd, char **argv, char **envp)
 		warning(errno, "Error: ");
 	if (dup2(fd_out, STDOUT_FILENO) < 0)
 		warning(errno, "Error: ");
-	close (fd_out);
-	close (fd[0]);
 	close (fd[1]);
 	execute(argv[3], envp);
 }
@@ -71,7 +67,6 @@ void	child_two(int *fd, char **argv, char **envp)
 void	pipex(char **argv, char **envp)
 {
 	pid_t	child1;
-	pid_t	child2;
 	int		fd[2];
 
 	if (pipe(fd) == -1)
@@ -81,15 +76,15 @@ void	pipex(char **argv, char **envp)
 		warning(errno, "fork: ");
 	if (!child1)
 		child_one(fd, argv, envp);
-	child2 = fork();
-	if (child2 < 0)
-		warning(errno, "fork: ");
-	if (!child2)
+	else
+	{
+		if (waitpid(child1, NULL, 0) == -1)
+			warning(errno, "waitpid: ");
 		child_two(fd, argv, envp);
+	}
 	close (fd[0]);
 	close (fd[1]);
 	waitpid(child1, NULL, 0);
-	waitpid(child2, NULL, 0);
 }
 
 int	main(int argc, char **argv, char **envp)
